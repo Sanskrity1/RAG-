@@ -1,28 +1,27 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from .config import CHUNK_SIZE, CHUNK_OVERLAP, TEXT_COLUMN, METADATA_COLUMNS
+from .config import CHUNK_SIZE, CHUNK_OVERLAP
 
 def create_chunks(df):
-    """
-    Split movie overviews into chunks and attach metadata.
-    """
-    text_splitter = RecursiveCharacterTextSplitter(
+    splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP
     )
 
-    all_chunks = []
+    chunks = []
     for _, row in df.iterrows():
-        text = row[TEXT_COLUMN]
-        if not isinstance(text, str) or not text.strip():
-            continue  
+        overview = row["overview"]
+        if not isinstance(overview, str) or not overview.strip():
+            continue
 
-        metadata = {col: row[col] for col in METADATA_COLUMNS}
-        chunks = text_splitter.split_text(text)
-        for chunk in chunks:
-            all_chunks.append({
+        for chunk in splitter.split_text(overview):
+            chunks.append({
                 "text": chunk,
-                "metadata": metadata
+                "title": row["title"],
+                "popularity": row["popularity"],
+                "vote_average": row["vote_average"],
+                "vote_count": row["vote_count"],
+                "release_date": row["release_date"]
             })
 
-    print(f"Total chunks created: {len(all_chunks)}")
-    return all_chunks[:50]  
+    print(f"Total chunks created: {len(chunks)}")
+    return chunks[:50] 

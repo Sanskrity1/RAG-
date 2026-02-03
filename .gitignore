@@ -1,37 +1,28 @@
-# Python cache files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Virtual environment
 venv/
 
-# Data files (optional, if you don't want to upload CSVs or vector stores)
 data/vector_store/
 
 
-# OS-specific files
 .DS_Store
 Thumbs.db
 
-# Logs
 *.log
 
-# IDE/editor files
 .vscode/
 .idea/
 *.sublime-workspace
 *.sublime-project
 
-# Chroma/embedding cache (if any)
 .chromadb/
 
-# Python egg/bdist
 *.egg
 *.egg-info/
 dist/
 build/
 
-# Environment files
 .env

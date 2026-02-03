@@ -12,19 +12,23 @@ def init_vector_store():
         is_persistent=True
     ))
 
-    collection = client.get_or_create_collection(name="top_rated_movies")
-    return collection
+    return client.get_or_create_collection("top_rated_movies")
 
+def store_chunks(chunks, collection, embed_fn):
+    for i, chunk in enumerate(chunks):
+        vector = embed_fn(chunk["text"])
 
-def store_chunks(chunks, collection, embedding_func):
-    for i, chunk in enumerate(chunks, 1):
-        print(f"Embedding chunk {i}/{len(chunks)}...")
-        embedding_vector = embedding_func(chunk["text"])
-        if embedding_vector is not None:
-            collection.add(
-                ids=[str(i)],
-                documents=[chunk["text"]],
-                metadatas=[chunk["metadata"]],
-                embeddings=[embedding_vector]
-            )
+        collection.add(
+            ids=[str(i)],
+            documents=[chunk["text"]],
+            embeddings=[vector],
+            metadatas=[{
+                "title": chunk["title"],
+                "popularity": chunk["popularity"],
+                "vote_average": chunk["vote_average"],
+                "vote_count": chunk["vote_count"],
+                "release_date": chunk["release_date"]
+            }]
+        )
+
     print("All chunks stored. Total vectors:", collection.count())

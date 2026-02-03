@@ -1,7 +1,6 @@
-def query_vector_store(collection, query, embedding_func, top_k=3):
-    query_vector = embedding_func(query)
-    results = collection.query(
-        query_embeddings=[query_vector],
+def query_vector_store(collection, query, embed_fn, top_k=3):
+    vector = embed_fn(query)
+    return collection.query(
+        query_embeddings=[vector],
         n_results=top_k
     )
-    return results

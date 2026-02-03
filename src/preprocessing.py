@@ -1,9 +1,8 @@
 import pandas as pd
-from .config import CSV_PATH, TEXT_COLUMN
+from .config import CSV_PATH
 
 def load_data():
     df = pd.read_csv(CSV_PATH)
-    if TEXT_COLUMN not in df.columns:
-        raise ValueError(f"{TEXT_COLUMN} not found in CSV")
-    df[TEXT_COLUMN] = df[TEXT_COLUMN].fillna("")  
+    df = df.fillna("")
+    print(f"Loaded {len(df)} movies.")
     return df

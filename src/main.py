@@ -6,38 +6,67 @@ from src.embedding import get_embedding
 
 def main():
     df = load_data()
+    print(f"Loaded {len(df)} movies.\n")
 
     chunks = create_chunks(df)
+    print(f"Total chunks created: {len(chunks)}\n")
 
     collection = init_vector_store()
-
     store_chunks(chunks, collection, get_embedding)
 
     print("\nVector store ready! Ask questions about movies.\n")
 
     while True:
-        query = input("Your question (type 'exit' to quit): ")
+        query = input("Your question (type 'exit' to quit): ").strip()
         if query.lower() == "exit":
             break
 
-        try:
-            results = query_vector_store(collection, query, get_embedding, top_k=1)
+        results = query_vector_store(collection, query, get_embedding, top_k=1)
 
-            if results['documents'][0]:
-                doc_text = results['documents'][0][0]
-                metadata = results['metadatas'][0][0]
+        if not results["documents"][0]:
+            print("Sorry, no result found.\n")
+            continue
 
-                print("\nTop matching movie overview:\n")
-                print(f"Overview: {doc_text}")
-                print("\nMetadata:")
-                for key, value in metadata.items():
-                    print(f"{key}: {value}")
-                print("\n")
+        doc = results["documents"][0][0]
+        meta = results["metadatas"][0][0]
+
+        print("\nAnswer:\n")
+
+        q = query.lower()
+
+        if "popularity" in q:
+            value = meta.get("popularity")
+            if value is not None:
+                print(f"{meta.get('title')} has a popularity score of {value}\n")
             else:
-                print("No matching movie found.\n")
+                print("Popularity data not available.\n")
 
-        except Exception as e:
-            print(f"Error generating answer: {e}\nAnswer:\nCould not generate an answer.\n")
+        elif "vote average" in q:
+            value = meta.get("vote_average")
+            if value is not None:
+                print(f"{meta.get('title')} has a vote average of {value}\n")
+            else:
+                print("Vote average not available.\n")
+
+        elif "vote count" in q:
+            value = meta.get("vote_count")
+            if value is not None:
+                print(f"{meta.get('title')} has a vote count of {value}\n")
+            else:
+                print("Vote count not available.\n")
+
+        elif "release date" in q:
+            value = meta.get("release_date")
+            if value:
+                print(f"{meta.get('title')} was released on {value}\n")
+            else:
+                print("Release date not available.\n")
+
+        elif "overview" in q:
+            print(doc + "\n")
+
+        else:
+            print("Sorry, I can only answer questions based on the dataset fields.\n")
 
 if __name__ == "__main__":
     main()
