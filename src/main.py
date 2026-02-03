@@ -3,6 +3,14 @@ from src.chunker import create_chunks
 from src.store import init_vector_store, store_chunks
 from src.search import query_vector_store
 from src.embedding import get_embedding
+from thefuzz import process
+
+def find_movie(df, movie_query, threshold=85):
+    titles = df["title"].tolist()
+    best_match, score = process.extractOne(movie_query, titles)
+    if score >= threshold:
+        return df[df["title"] == best_match].iloc[0]
+    return None
 
 def main():
     df = load_data()
@@ -14,57 +22,42 @@ def main():
     collection = init_vector_store()
     store_chunks(chunks, collection, get_embedding)
 
-    print("\nVector store ready! Ask questions about movies.\n")
+    print("\nAsk questions about the movies.\n")
 
     while True:
         query = input("Your question (type 'exit' to quit): ").strip()
         if query.lower() == "exit":
             break
 
-        results = query_vector_store(collection, query, get_embedding, top_k=1)
+        movie_title = None
+        for keyword in ["overview of", "popularity of", "vote average of",
+                        "vote count of", "release date of"]:
+            if keyword in query.lower():
+                movie_title = query.lower().split(keyword)[-1].strip()
+                field = keyword.replace(" of", "").replace("overview", "overview")
+                break
+        else:
+            movie_title = None
+            field = None
 
-        if not results["documents"][0]:
-            print("Sorry, no result found.\n")
-            continue
+        if movie_title:
+            movie_row = find_movie(df, movie_title)
+            if movie_row is None:
+                print(f"Sorry, movie '{movie_title}' not found.\n")
+                continue
 
-        doc = results["documents"][0][0]
-        meta = results["metadatas"][0][0]
-
-        print("\nAnswer:\n")
-
-        q = query.lower()
-
-        if "popularity" in q:
-            value = meta.get("popularity")
-            if value is not None:
-                print(f"{meta.get('title')} has a popularity score of {value}\n")
+            if field == "overview":
+                print(f"\nOverview of '{movie_row['title']}':\n{movie_row['overview']}\n")
+            elif field == "popularity":
+                print(f"\n'{movie_row['title']}' popularity: {movie_row.get('popularity', 'N/A')}\n")
+            elif field == "vote average":
+                print(f"\n'{movie_row['title']}' vote average: {movie_row.get('vote_average', 'N/A')}\n")
+            elif field == "vote count":
+                print(f"\n'{movie_row['title']}' vote count: {movie_row.get('vote_count', 'N/A')}\n")
+            elif field == "release date":
+                print(f"\n'{movie_row['title']}' release date: {movie_row.get('release_date', 'N/A')}\n")
             else:
-                print("Popularity data not available.\n")
-
-        elif "vote average" in q:
-            value = meta.get("vote_average")
-            if value is not None:
-                print(f"{meta.get('title')} has a vote average of {value}\n")
-            else:
-                print("Vote average not available.\n")
-
-        elif "vote count" in q:
-            value = meta.get("vote_count")
-            if value is not None:
-                print(f"{meta.get('title')} has a vote count of {value}\n")
-            else:
-                print("Vote count not available.\n")
-
-        elif "release date" in q:
-            value = meta.get("release_date")
-            if value:
-                print(f"{meta.get('title')} was released on {value}\n")
-            else:
-                print("Release date not available.\n")
-
-        elif "overview" in q:
-            print(doc + "\n")
-
+                print("Sorry, I can only answer questions based on the dataset fields.\n")
         else:
             print("Sorry, I can only answer questions based on the dataset fields.\n")
 
